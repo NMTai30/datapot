@@ -1,0 +1,65 @@
+object_type,table,model_name,source_column,data_type,hidden,key,description_or_dax
+column,Date,Date,Date,dateTime,no,yes,Calendar date / relationship key (Excel serial in source)
+column,Date,Month Number,MonthNo,int64,yes,no,Month number 1-12 sort key
+column,Date,Month Name,MonthName,string,no,no,Sorted by Month Number
+column,Date,Month ID,MonthID,int64,yes,no,YYYYMM numeric key
+column,Date,Month,Month,string,no,no,User-facing label e.g. Jan-21
+column,Date,Quarter,Quarter,string,no,no,Q1-Q4
+column,Date,Year,Year,int64,no,no,Calendar year
+column,Campaign,Campaign ID,CampaignID,int64,yes,yes,Channel/device lookup key
+column,Campaign,Traffic Channel,TrafficChannel,string,no,no,Marketing/source channel; trim & fix Affliliate
+column,Campaign,Device,Device,string,no,no,Desktop/Mobile/Tablet/Paper; fix Deskop
+column,Campaign,Channel Type,ChannelType (derived),string,no,no,Digital for all except Mail; Offline for Mail
+column,Campaign,Is Digital,IsDigital (derived),boolean,no,no,TRUE when Channel Type = Digital
+column,Customer,Customer ID,CustomerID,string,yes,yes,Preserve leading zeroes e.g. 000001
+column,Customer,Zip Code,ZipCode,string,yes,no,Relates to Geo; preserve leading zeroes
+column,Customer,Customer Contact,Email Name,string,yes,no,Contact-like text; hidden for privacy
+column,Product,Product ID,ProductID,string,yes,yes,Product / SKU identifier
+column,Product,Product,Product,string,no,no,Product / SKU name
+column,Product,Category,Category,string,no,no,Accessory/Mix/Rural/Urban/Youth
+column,Product,Segment,Segment,string,no,no,Sub-group within Category
+column,Product,Category-Segment ID,(derived),string,yes,no,Relates to CategorySegment; Category|Segment
+column,Product,Manufacturer,Manufacturer,string,no,no,All rows = VanArsdel (no competitor data)
+column,Product,Manufacturer ID,ManufacturerID,string,yes,no,Only value 7 in current file
+column,Product,Unit Cost,Unit Cost,double,no,no,Cost per unit; basis for COGS
+column,Product,Unit Selling Price,Unit Price,double,no,no,Price per unit; basis for Revenue
+column,CategorySegment,Category-Segment ID,(derived),string,yes,yes,Category|Segment; links Product and Plan
+column,CategorySegment,Category,(derived),string,no,no,Product category
+column,CategorySegment,Segment,(derived),string,no,no,Product segment
+column,CategorySegment,Category-Segment,(derived),string,no,no,Planning label e.g. Urban-Moderation
+column,Geo,Zip,Zip,string,yes,yes,Joined from Customer Zip Code; preserve leading zeroes
+column,Geo,City,City,string,no,no,City label
+column,Geo,State,State,string,no,no,US state abbreviation
+column,Geo,Region,Region,string,no,no,East/Central/West
+column,Geo,District,District,string,no,no,Sales district
+column,Geo,Country,Country,string,no,no,USA only in current data
+column,Sales,Product ID,ProductID,string,yes,no,Relates to Product
+column,Sales,Transaction Date,Date,dateTime,yes,no,Relates to Date (Excel serial in source)
+column,Sales,Customer ID,CustomerID,string,yes,no,Relates to Customer
+column,Sales,Campaign ID,CampaignID,int64,yes,no,Relates to Campaign
+column,Sales,Units Sold,Units,int64,no,no,Quantity sold; currently all rows = 1
+column,Plan,Plan Type,Type,string,no,no,Budget / Forecast
+column,Plan,Month Start Date,(derived),dateTime,yes,no,Relates to Date (1st of month)
+column,Plan,Month ID,(derived),int64,yes,no,YYYYMM
+column,Plan,Category-Segment ID,(derived),string,yes,no,Relates to CategorySegment
+column,Plan,Category-Segment,(from wide header),string,no,no,Planning label e.g. Urban-Moderation
+column,Plan,Plan Amount,(unpivoted value),double,no,no,Monetary plan; assumed revenue target (confirm)
+measure,Key Measures,Sales Lines,,,no,,COUNTROWS(Sales)
+measure,Key Measures,Units Sold,,,no,,SUM(Sales[Units Sold])
+measure,Key Measures,Customers,,,no,,DISTINCTCOUNT(Sales[Customer ID])
+measure,Key Measures,Revenue,,,no,,SUMX(Sales Sales[Units Sold] * RELATED(Product[Unit Selling Price]))
+measure,Key Measures,COGS,,,yes,,SUMX(Sales Sales[Units Sold] * RELATED(Product[Unit Cost]))
+measure,Key Measures,Gross Profit,,,no,,[Revenue] - [COGS]
+measure,Key Measures,Gross Margin %,,,no,,DIVIDE([Gross Profit] [Revenue])
+measure,Key Measures,Average Selling Price,,,no,,DIVIDE([Revenue] [Units Sold])
+measure,Key Measures,Budget,,,no,,CALCULATE(SUM(Plan[Plan Amount]) Plan[Plan Type]=Budget)
+measure,Key Measures,Forecast,,,no,,CALCULATE(SUM(Plan[Plan Amount]) Plan[Plan Type]=Forecast)
+measure,Key Measures,Budget Attainment %,,,no,,DIVIDE([Revenue] [Budget])
+measure,Key Measures,Budget Variance,,,no,,[Revenue] - [Budget]
+measure,Key Measures,Budget Variance %,,,no,,DIVIDE([Budget Variance] [Budget])
+measure,Key Measures,Forecast Variance,,,no,,[Revenue] - [Forecast]
+measure,Key Measures,Digital Revenue,,,no,,CALCULATE([Revenue] Campaign[Is Digital]=TRUE)
+measure,Key Measures,Digital Revenue Share %,,,no,,DIVIDE([Digital Revenue] [Revenue])
+measure,Key Measures,Revenue Share %,,,no,,DIVIDE([Revenue] CALCULATE([Revenue] ALLSELECTED()))
+measure,Key Measures,Revenue PY,,,no,,CALCULATE([Revenue] DATEADD('Date'[Date] -1 YEAR))
+measure,Key Measures,Revenue YoY %,,,no,,DIVIDE([Revenue] - [Revenue PY] [Revenue PY])
